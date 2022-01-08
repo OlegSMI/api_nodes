@@ -25,7 +25,8 @@ class UserViewSet(ModelViewSet):
 
 
 class NoteViewSet(ModelViewSet):
-    queryset = Note.objects.all()
+    model = Note
+    queryset = model.objects.all()
     serializer_class = NoteSerializer
     permission_classes = (IsAuthorOrReadOnly,)
    #http_method_names = ['get', 'post' ] #ограничение какие методы используются
@@ -34,6 +35,17 @@ class NoteViewSet(ModelViewSet):
         context = {'request': request}
         serializer = ThinNoteSerializer(notes, many=True, context=context)
         return Response(serializer.data)
+
+# замена функции list с более удобным функционалом
+    # def get_serializer_class(self):
+    #     if self.action == 'list':
+    #         return ThinNoteSerializer
+    #     return NoteSerializer
+
+    def get_queryset(self):
+        if self.request.user.admin_is:
+            return self.model.objects.all()
+        return self.model.objects.filter(author=self.request.user)
 
     def perform_create(self, serializer):
         serializer.save(author=self.request.user)
